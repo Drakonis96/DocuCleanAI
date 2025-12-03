@@ -95,16 +95,16 @@ const EditorView: React.FC<EditorViewProps> = ({ doc, onBack, onSave }) => {
 
   const filterControls = (
     <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar py-1">
-      <span className="text-xs text-slate-400 font-medium whitespace-nowrap pl-2 border-l border-slate-200">Include:</span>
+      <span className="text-xs text-slate-400 font-medium whitespace-nowrap pl-2 border-l border-slate-200 dark:border-slate-700">Include:</span>
       {availableLabels.map(label => (
         <label key={label} className="flex items-center space-x-1 cursor-pointer group select-none">
           <input 
             type="checkbox" 
             checked={selectedLabels.includes(label)}
             onChange={() => toggleLabel(label)}
-            className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+            className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
           />
-          <span className="text-xs text-slate-600 group-hover:text-blue-600 capitalize">
+          <span className="text-xs text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 capitalize">
             {label.toLowerCase().replace('_', ' ')}
           </span>
         </label>
@@ -113,17 +113,17 @@ const EditorView: React.FC<EditorViewProps> = ({ doc, onBack, onSave }) => {
   );
 
   return (
-    <div className="flex flex-col h-full bg-slate-100">
+    <div className="flex flex-col h-full bg-slate-100 dark:bg-slate-900 transition-colors">
       {/* Header */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 shrink-0">
+      <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 z-10 shrink-0 transition-colors">
         <div className="flex items-center space-x-4">
-          <button onClick={onBack} className="text-slate-500 hover:text-slate-900">
+          <button onClick={onBack} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
             &larr; Back
           </button>
-          <h1 className="text-lg font-semibold text-slate-800 truncate max-w-xs" title={doc.name}>
+          <h1 className="text-lg font-semibold text-slate-800 dark:text-white truncate max-w-xs" title={doc.name}>
             {doc.name}
           </h1>
-          <span className="text-xs px-2 py-1 bg-slate-100 rounded text-slate-500">
+          <span className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-slate-500 dark:text-slate-300">
             {doc.pages.length} Pages
           </span>
         </div>
@@ -132,22 +132,24 @@ const EditorView: React.FC<EditorViewProps> = ({ doc, onBack, onSave }) => {
           <button
             onClick={handleSave}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center ${
-              isSaved ? 'text-green-600 bg-green-50' : 'text-white bg-blue-600 hover:bg-blue-700'
+              isSaved 
+              ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' 
+              : 'text-white bg-blue-600 hover:bg-blue-700'
             }`}
           >
             {isSaved ? <><CheckCircleIcon className="w-4 h-4 mr-1"/> Saved</> : 'Save Changes'}
           </button>
           
           <div className="relative group">
-            <button className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 flex items-center">
+            <button className="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-600 flex items-center">
               <DownloadIcon className="w-4 h-4 mr-2" /> Export
             </button>
             <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50">
-               <div className="bg-white rounded-lg shadow-xl border border-slate-100 overflow-hidden">
-                <button onClick={() => handleDownload('md')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Markdown (.md)</button>
-                <button onClick={() => handleDownload('epub')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">EPUB (.epub)</button>
-                <button onClick={() => handleDownload('html')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">HTML (.html)</button>
-                <button onClick={() => handleDownload('txt')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Plain Text (.txt)</button>
+               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <button onClick={() => handleDownload('md')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400">Markdown (.md)</button>
+                <button onClick={() => handleDownload('epub')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400">EPUB (.epub)</button>
+                <button onClick={() => handleDownload('html')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400">HTML (.html)</button>
+                <button onClick={() => handleDownload('txt')} className="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400">Plain Text (.txt)</button>
                </div>
             </div>
           </div>
@@ -157,28 +159,28 @@ const EditorView: React.FC<EditorViewProps> = ({ doc, onBack, onSave }) => {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Image Viewer */}
-        <div className="w-1/2 flex flex-col border-r border-slate-200">
-          <div className="flex-1 overflow-hidden relative">
+        <div className="w-1/2 flex flex-col border-r border-slate-200 dark:border-slate-700">
+          <div className="flex-1 overflow-hidden relative bg-slate-100 dark:bg-slate-900">
             {doc.pages[activePage] && (
               <ImageViewer page={doc.pages[activePage]} />
             )}
           </div>
           {/* Pagination */}
-          <div className="h-14 bg-white border-t border-slate-200 flex items-center justify-center space-x-4 shrink-0">
+          <div className="h-14 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-center space-x-4 shrink-0 transition-colors">
             <button 
               disabled={activePage === 0}
               onClick={() => setActivePage(p => p - 1)}
-              className="px-3 py-1 rounded bg-slate-100 disabled:opacity-50 text-sm font-medium"
+              className="px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 disabled:opacity-50 text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Prev
             </button>
-            <span className="text-sm text-slate-600 font-medium">
+            <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
               Page {activePage + 1} of {doc.pages.length}
             </span>
             <button 
               disabled={activePage === doc.pages.length - 1}
               onClick={() => setActivePage(p => p + 1)}
-              className="px-3 py-1 rounded bg-slate-100 disabled:opacity-50 text-sm font-medium"
+              className="px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 disabled:opacity-50 text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Next
             </button>

@@ -88,24 +88,24 @@ const Dashboard: React.FC<DashboardProps> = ({
     <div className="container mx-auto px-6 py-8">
       {/* Header & Breadcrumbs */}
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-2 text-lg text-slate-600 overflow-hidden">
+        <div className="flex items-center space-x-2 text-lg text-slate-600 dark:text-slate-400 overflow-hidden">
           <button 
             onClick={() => onNavigateFolder(null)}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDropOnBreadcrumb(e, null)}
-            className={`flex items-center hover:text-blue-600 transition-colors ${currentFolderId === null ? 'font-bold text-slate-800' : ''}`}
+            className={`flex items-center hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${currentFolderId === null ? 'font-bold text-slate-800 dark:text-slate-200' : ''}`}
           >
             <HomeIcon className="w-5 h-5" />
           </button>
           
           {getBreadcrumbs().map((folder) => (
             <React.Fragment key={folder.id}>
-              <ChevronRightIcon className="w-4 h-4 text-slate-400" />
+              <ChevronRightIcon className="w-4 h-4 text-slate-400 dark:text-slate-600" />
               <button 
                 onClick={() => onNavigateFolder(folder.id)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDropOnBreadcrumb(e, folder.id)}
-                className={`hover:text-blue-600 transition-colors whitespace-nowrap ${currentFolderId === folder.id ? 'font-bold text-slate-800' : ''}`}
+                className={`hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap ${currentFolderId === folder.id ? 'font-bold text-slate-800 dark:text-slate-200' : ''}`}
               >
                 {folder.name}
               </button>
@@ -116,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="flex space-x-3">
           <button
             onClick={() => setIsCreatingFolder(true)}
-            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors flex items-center shadow-sm"
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center shadow-sm"
           >
             <PlusIcon className="w-4 h-4 mr-2" /> New Folder
           </button>
@@ -131,7 +131,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Inline Folder Creation */}
       {isCreatingFolder && (
-        <div className="mb-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div className="mb-6 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-4 transition-colors">
           <FolderIcon className="w-6 h-6 text-blue-500" />
           <input
             autoFocus
@@ -140,34 +140,34 @@ const Dashboard: React.FC<DashboardProps> = ({
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
-            className="flex-1 p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="flex-1 p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           />
-          <button onClick={handleCreateFolder} className="text-blue-600 font-medium hover:underline">Create</button>
-          <button onClick={() => setIsCreatingFolder(false)} className="text-slate-500 hover:text-slate-800">Cancel</button>
+          <button onClick={handleCreateFolder} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Create</button>
+          <button onClick={() => setIsCreatingFolder(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">Cancel</button>
         </div>
       )}
 
       {visibleItems.length === 0 && !isCreatingFolder ? (
-        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
-          <p className="text-slate-500">This folder is empty.</p>
+        <div className="text-center py-20 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 transition-colors">
+          <p className="text-slate-500 dark:text-slate-400">This folder is empty.</p>
           <div className="mt-4 space-x-4">
-             <button onClick={onNewUpload} className="text-blue-600 font-medium hover:underline">Upload Document</button>
-             <span className="text-slate-300">|</span>
-             <button onClick={() => setIsCreatingFolder(true)} className="text-blue-600 font-medium hover:underline">Create Folder</button>
+             <button onClick={onNewUpload} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Upload Document</button>
+             <span className="text-slate-300 dark:text-slate-600">|</span>
+             <button onClick={() => setIsCreatingFolder(true)} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Create Folder</button>
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Name</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Date</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Status / Progress</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase text-right">Actions</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Name</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Date</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Status / Progress</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {/* Folders */}
               {folders.map((folder) => (
                 <tr 
@@ -176,21 +176,21 @@ const Dashboard: React.FC<DashboardProps> = ({
                   onDragStart={(e) => handleDragStart(e, folder.id)}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDropOnFolder(e, folder.id)}
-                  className="hover:bg-slate-50 transition-colors group cursor-pointer"
+                  className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer"
                   onClick={() => onNavigateFolder(folder.id)}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-blue-50 rounded-lg text-blue-500">
+                      <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-500 dark:text-blue-400">
                         <FolderIcon className="w-5 h-5" />
                       </div>
-                      <span className="font-medium text-slate-700">{folder.name}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-200">{folder.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 text-sm">
+                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">
                     {new Date(folder.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-slate-500 text-sm">-</td>
+                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">-</td>
                   <td className="px-6 py-4 text-right relative">
                     <button 
                       type="button"
@@ -198,7 +198,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         e.stopPropagation(); 
                         onDeleteItem(folder.id); 
                       }}
-                      className="text-slate-400 hover:text-red-600 p-2 relative z-10"
+                      className="text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 p-2 relative z-10"
                       title="Delete Folder"
                     >
                       <TrashIcon className="w-4 h-4 pointer-events-none" />
@@ -213,17 +213,17 @@ const Dashboard: React.FC<DashboardProps> = ({
                   key={doc.id} 
                   draggable
                   onDragStart={(e) => handleDragStart(e, doc.id)}
-                  className="hover:bg-slate-50 transition-colors"
+                  className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-slate-100 rounded-lg text-slate-500">
+                      <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400">
                         <FileIcon className="w-5 h-5" />
                       </div>
-                      <span className="font-medium text-slate-700">{doc.name}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-200">{doc.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 text-sm">
+                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">
                     {new Date(doc.uploadDate).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 w-1/4">
@@ -238,7 +238,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       {doc.status === 'ready' && (
                         <button
                           onClick={() => onOpenDocument(doc.id)}
-                          className="text-blue-600 font-medium text-sm hover:underline px-2 relative z-10"
+                          className="text-blue-600 dark:text-blue-400 font-medium text-sm hover:underline px-2 relative z-10"
                         >
                           Open
                         </button>
@@ -249,7 +249,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                           e.stopPropagation(); 
                           onDeleteItem(doc.id); 
                         }}
-                        className="text-slate-400 hover:text-red-600 p-2 relative z-10"
+                        className="text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 p-2 relative z-10"
                         title="Delete Document"
                       >
                         <TrashIcon className="w-4 h-4 pointer-events-none" />
@@ -269,7 +269,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 const StatusWithProgress = ({ status, processed, total }: { status: DocumentData['status'], processed: number, total: number }) => {
   if (status === 'ready') {
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
         <CheckCircleIcon className="w-3 h-3 mr-1" /> Ready
       </span>
     );
@@ -277,7 +277,7 @@ const StatusWithProgress = ({ status, processed, total }: { status: DocumentData
 
   if (status === 'error') {
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
         <AlertCircleIcon className="w-3 h-3 mr-1" /> Error
       </span>
     );
@@ -288,13 +288,13 @@ const StatusWithProgress = ({ status, processed, total }: { status: DocumentData
   
   return (
     <div className="w-full max-w-[140px]">
-      <div className="flex justify-between text-xs mb-1 text-slate-600">
+      <div className="flex justify-between text-xs mb-1 text-slate-600 dark:text-slate-400">
         <span>Processing</span>
         <span>{processed}/{total}</span>
       </div>
-      <div className="w-full bg-slate-200 rounded-full h-2">
+      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
         <div 
-          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+          className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300" 
           style={{ width: `${percentage}%` }}
         ></div>
       </div>

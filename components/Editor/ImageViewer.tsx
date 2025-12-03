@@ -27,7 +27,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ page }) => {
   };
 
   return (
-    <div className="relative w-full h-full overflow-auto bg-slate-100 p-4" ref={containerRef}>
+    <div className="relative w-full h-full overflow-auto bg-slate-100 dark:bg-slate-900 p-4 transition-colors" ref={containerRef}>
       <div className="relative shadow-lg inline-block">
         <img
           src={page.imageUrl}

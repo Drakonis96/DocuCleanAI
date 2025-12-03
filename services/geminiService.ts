@@ -1,6 +1,6 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { TextBlock, BlockLabel } from "../types";
+import { GoogleGenAI, Type } from "@google/genai";
 import { OCR_LAYOUT_PROMPT } from "../constants";
-import { BlockLabel, TextBlock } from "../types";
 
 const processPageWithGemini = async (
   base64Image: string,
@@ -9,12 +9,13 @@ const processPageWithGemini = async (
 ): Promise<TextBlock[]> => {
   
   if (!process.env.API_KEY) {
-    throw new Error("API Key is missing. Please check your environment configuration.");
+    throw new Error("API Key is missing. Please checking your settings.");
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  const responseSchema: Schema = {
+  
+  // Define the schema for structured output
+  const responseSchema = {
     type: Type.OBJECT,
     properties: {
       blocks: {
@@ -25,7 +26,10 @@ const processPageWithGemini = async (
             text: { type: Type.STRING },
             label: { 
               type: Type.STRING, 
-              enum: Object.values(BlockLabel) 
+              enum: [
+                'TITLE', 'MAIN_TEXT', 'FOOTNOTE', 'HEADER', 
+                'FOOTER', 'CAPTION', 'UNKNOWN'
+              ] 
             },
             box_2d: {
               type: Type.ARRAY,
@@ -59,7 +63,7 @@ const processPageWithGemini = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.1, // Low temperature for factual extraction
+        temperature: 0.1,
         safetySettings: [
           { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
           { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
@@ -70,9 +74,9 @@ const processPageWithGemini = async (
     });
 
     const text = response.text;
+
     if (!text) {
-      console.warn("Empty response from AI. Finish reason:", response.candidates?.[0]?.finishReason);
-      throw new Error("No text response from AI. The content might have been blocked or the model failed to generate valid JSON.");
+      throw new Error("No text response from AI.");
     }
 
     const parsed = JSON.parse(text);
@@ -87,17 +91,19 @@ const processPageWithGemini = async (
 
     return blocksWithIds;
 
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Gemini Service Error:", error);
+    throw new Error(error.message || "Failed to process document");
   }
 };
 
 const generateAppLogo = async (): Promise<string> => {
-  if (!process.env.API_KEY) throw new Error("API Key missing");
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  if (!process.env.API_KEY) {
+    throw new Error("API Key is missing");
+  }
 
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -112,13 +118,23 @@ const generateAppLogo = async (): Promise<string> => {
       }
     });
 
-    // Find the image part
+    let imageData = null;
     for (const part of response.candidates[0].content.parts) {
       if (part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        imageData = {
+          mimeType: part.inlineData.mimeType,
+          data: part.inlineData.data
+        };
+        break;
       }
     }
-    throw new Error("No image generated");
+
+    if (!imageData) {
+      throw new Error("No image generated");
+    }
+
+    return `data:${imageData.mimeType};base64,${imageData.data}`;
+
   } catch (e) {
     console.error("Logo generation failed", e);
     throw e;
