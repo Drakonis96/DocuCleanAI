@@ -1,6 +1,4 @@
-import { TextBlock, BlockLabel } from "../types";
-import { GoogleGenAI, Type } from "@google/genai";
-import { OCR_LAYOUT_PROMPT } from "../constants";
+import { TextBlock } from "../types";
 
 const processPageWithGemini = async (
   base64Image: string,
@@ -8,72 +6,26 @@ const processPageWithGemini = async (
   modelName: string = 'gemini-2.5-flash'
 ): Promise<TextBlock[]> => {
   
-  if (!process.env.API_KEY) {
-    throw new Error("API Key is missing. Please checking your settings.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  // Define the schema for structured output
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      blocks: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            text: { type: Type.STRING },
-            label: { 
-              type: Type.STRING, 
-              enum: [
-                'TITLE', 'MAIN_TEXT', 'FOOTNOTE', 'HEADER', 
-                'FOOTER', 'CAPTION', 'UNKNOWN'
-              ] 
-            },
-            box_2d: {
-              type: Type.ARRAY,
-              items: { type: Type.NUMBER },
-              description: "Bounding box [ymin, xmin, ymax, xmax] normalized 0-1000"
-            }
-          },
-          required: ["text", "label"]
-        }
-      }
-    }
-  };
-
   try {
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: OCR_LAYOUT_PROMPT },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: base64Image
-              }
-            }
-          ]
-        }
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-        temperature: 0.1,
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' }
-        ]
-      }
+    const response = await fetch('http://127.0.0.1:5037/api/process-page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        base64Image,
+        mimeType,
+        modelName
+      }),
     });
 
-    const text = response.text;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to process document on server");
+    }
+
+    const data = await response.json();
+    const text = data.text;
 
     if (!text) {
       throw new Error("No text response from AI.");
@@ -98,44 +50,25 @@ const processPageWithGemini = async (
 };
 
 const generateAppLogo = async (): Promise<string> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key is missing");
-  }
-
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [
-          { text: "A minimalist, modern vector logo for an app called 'DocuClean AI'. The icon should feature a stylized document or sheet of paper being cleaned or sparkling, implying clarity and organization. Use a color palette of Royal Blue, Slate Grey, and White. Flat design, clean lines, suitable for an app icon." }
-        ]
-      },
-      config: {
-        imageConfig: {
-          aspectRatio: "1:1",
-        }
-      }
+    const response = await fetch('/api/generate-logo', {
+      method: 'POST',
     });
 
-    let imageData = null;
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        imageData = {
-          mimeType: part.inlineData.mimeType,
-          data: part.inlineData.data
-        };
-        break;
-      }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to generate logo on server");
     }
 
-    if (!imageData) {
+    const imageData = await response.json();
+
+    if (!imageData || !imageData.data) {
       throw new Error("No image generated");
     }
 
     return `data:${imageData.mimeType};base64,${imageData.data}`;
 
-  } catch (e) {
+  } catch (e: any) {
     console.error("Logo generation failed", e);
     throw e;
   }

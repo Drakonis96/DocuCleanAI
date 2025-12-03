@@ -109,64 +109,18 @@ const App: React.FC = () => {
 
   // --- PROCESSING LOGIC (FRONTEND) ---
 
-  const processDocument = async (docId: string) => {
-    // 1. Get the current state of the document
-    let currentItems = await getAllItems();
-    let doc = currentItems.find(i => i.id === docId) as DocumentData;
+  // Polling for background processing updates
+  useEffect(() => {
+    const processingItems = items.filter(i => i.type === 'file' && (i as DocumentData).status === 'processing');
     
-    if (!doc) return;
+    if (processingItems.length > 0) {
+      const timer = setTimeout(async () => {
+        await loadItems();
+      }, 3000); // Poll every 3 seconds
 
-    try {
-      // 2. Iterate through pages
-      for (let i = 0; i < doc.pages.length; i++) {
-        const page = doc.pages[i];
-        
-        // Skip if already completed
-        if (page.status === 'completed') continue;
-
-        try {
-          // Extract base64
-          const base64Data = page.imageUrl.split(',')[1];
-          const mimeType = page.imageUrl.split(';')[0].split(':')[1];
-
-          // Call Gemini
-          const blocks = await processPageWithGemini(base64Data, mimeType, doc.modelUsed);
-
-          // Update Page Status
-          doc.pages[i] = {
-            ...page,
-            blocks: blocks,
-            status: 'completed'
-          };
-          doc.processedPages = i + 1;
-
-          // Save and Update UI incrementally
-          await saveItem(doc);
-          setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
-
-        } catch (err) {
-          console.error(`Page ${i + 1} failed`, err);
-          doc.pages[i].status = 'error';
-          doc.processedPages = i + 1; // Still count as processed to advance progress bar
-          await saveItem(doc);
-          setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
-        }
-      }
-
-      // 3. Finalize Status
-      const allFailed = doc.pages.every(p => p.status === 'error');
-      doc.status = allFailed ? 'error' : 'ready';
-      
-      await saveItem(doc);
-      setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
-
-    } catch (e) {
-      console.error("Fatal processing error", e);
-      doc.status = 'error';
-      await saveItem(doc);
-      setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
+      return () => clearTimeout(timer);
     }
-  };
+  }, [items]);
 
   // --- Actions ---
 
@@ -306,18 +260,14 @@ const App: React.FC = () => {
           }))
         };
         
-        // Save initial state to DB
-        await saveItem(newDoc);
-        newDocs.push(newDoc);
+        // Save initial state to DB and start background processing
+        const savedDoc = await saveItem(newDoc, true) as DocumentData;
+        newDocs.push(savedDoc);
       }
       
       // Update UI with new documents immediately
       setItems(prev => [...prev, ...newDocs]);
       setCurrentView(AppView.DASHBOARD);
-
-      // Start processing in background (non-blocking for UI, but blocking for the async function logic)
-      // We purposefully don't await this map so UI stays responsive
-      newDocs.forEach(doc => processDocument(doc.id));
 
     } catch (error: any) {
       console.error("Processing init failed", error);

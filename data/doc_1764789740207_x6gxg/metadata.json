@@ -1,0 +1,199 @@
+{
+  "id": "doc_1764789740207_x6gxg",
+  "name": "Galant - 2019 - “¿Hacemos turismo o viajamos, Biscuter” Manuel Vázquez Montalbán y las modalidades del viaje.pdf",
+  "type": "file",
+  "parentId": null,
+  "createdAt": 1764789740382,
+  "uploadDate": 1764789740382,
+  "status": "ready",
+  "modelUsed": "gemini-2.5-flash",
+  "totalPages": 2,
+  "processedPages": 2,
+  "pages": [
+    {
+      "pageNumber": 1,
+      "imageUrl": "/api/data/doc_1764789740207_x6gxg/page_1.jpeg",
+      "blocks": [
+        {
+          "text": "CEMVM 4 (2019): 58-71",
+          "label": "HEADER",
+          "box_2d": [
+            170,
+            229,
+            182,
+            366
+          ]
+        },
+        {
+          "text": "“Hacemos turismo o viajamos, Biscuter?” Manuel Vázquez Montalbán y las modalidades del viaje",
+          "label": "TITLE",
+          "box_2d": [
+            208,
+            229,
+            249,
+            769
+          ]
+        },
+        {
+          "text": "IVANNE GALANT",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            253,
+            229,
+            265,
+            360
+          ]
+        },
+        {
+          "text": "Este artículo nace del descubrimiento de una edición del Viaje a España de Théophile Gautier prologada por Manuel Vázquez Montalbán, publi cada en 1985 por la editorial Taifa. A raíz de esto, se constituyó un cor pus montalbaniano relacionado con el viaje, sabiendo que era un motivo recurrente de la obra literaria de Montalbán¹. El prólogo al libro de Gau tier, bastante crítico hacia el romántico francés, sirvió para iniciar una reflexión sobre la aportación del escritor barcelonés a la problemática de los especialistas del viaje, a través de sus personajes o a través de textos de varios tipos. La obra que más se utilizó fue Milenio, de donde provie ne la cita-título de este artículo. Los dos volúmenes de Milenio propor cionan un gran abanico de citas que servirán aquí para ilustrar el estado de la cuestión teórica sobre la oposición conceptual y semántica que existe, que se construye o que se inventa entre viaje y turismo². Tras estas consideraciones teórico-literarias, se analizará el punto de vista que Montalbán expresa en Crónica sentimental de España, con un apartado titulado “Turismo y libertad”, en el prólogo al Viaje de Gautier, así como en una guía de viaje de Barcelona que se publicó en Francia en 1987. Terminaremos mostrando que, hoy en día, en una Barcelona hiper turistizada, la existencia de un turismo literario basado en la vida y la obra de Montalbán puede constituir un puente entre el viaje, el turismo y la literatura.",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            280,
+            229,
+            579,
+            769
+          ]
+        },
+        {
+          "text": "Teoría del viaje y del turismo, ilustrada por Carvalho y Biscuter",
+          "label": "TITLE",
+          "box_2d": [
+            592,
+            229,
+            618,
+            769
+          ]
+        },
+        {
+          "text": "A menudo se oponen viaje y turismo, pero pocas veces la oposición apa rece satisfactoria. Existen varias definiciones, varias explicaciones que van desde la etimología hasta la sociología, y que muchas veces se basan en unas ideas preconcebidas. Según las épocas, los teóricos del viaje intentaron destacar varias diferencias entre los dos términos.",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            629,
+            229,
+            680,
+            769
+          ]
+        },
+        {
+          "text": "¹ Véase “La vuelta al mundo de Pepe Carvalho”, que es el Epílogo conmemora tivo del 25º aniversario de Carvalho y aparece en la edición de Planeta de Los pájaros de Bangkok, en 1997 y que detalla todos los viajes de Carvalho.",
+          "label": "FOOTNOTE",
+          "box_2d": [
+            715,
+            229,
+            760,
+            769
+          ]
+        },
+        {
+          "text": "² Edición consultada para este trabajo: Manuel Vázquez Montalbán, Milenio Carvalho, Barcelona: Planeta, Booket, 2010.",
+          "label": "FOOTNOTE",
+          "box_2d": [
+            762,
+            229,
+            787,
+            769
+          ]
+        }
+      ],
+      "status": "completed"
+    },
+    {
+      "pageNumber": 2,
+      "imageUrl": "/api/data/doc_1764789740207_x6gxg/page_2.jpeg",
+      "blocks": [
+        {
+          "text": "¿Hacemos turismo o viajamos, Biscuter?\" Manuel Vázquez...",
+          "label": "HEADER",
+          "box_2d": [
+            157,
+            286,
+            169,
+            875
+          ]
+        },
+        {
+          "text": "59",
+          "label": "HEADER",
+          "box_2d": [
+            157,
+            943,
+            169,
+            965
+          ]
+        },
+        {
+          "text": "En Milenio, último periplo de Carvalho y Biscuter, los personajes reflexionan a menudo sobre la oposición entre el turismo y el viaje. En un artículo titulado \"Viaje al fin del mundo: Política del tiempo y el espacio en Milenio Carvalho\", Mari Paz Balibrea comenta que \"la cuestión aquí es que Carvalho se deja interpelar por la lógica del turismo global y piensa en sus opciones de viaje como mediadas por un mercado tan sofisticado que es capaz de acomodar cualquier fantasía. Su esquema para pensar el viaje corresponde al paradigma posmoderno\" (Balibrea 201). Los protagonistas se quieren considerar como \"viajeros infinitos\" (Vázquez Montalbán, Milenio Carvalho 532) al mismo tiempo que contemplan los estragos del turismo en una sociedad globalizada.",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            190,
+            286,
+            326,
+            965
+          ]
+        },
+        {
+          "text": "Si nos fijamos en las ocurrencias de las palabras relacionadas con el viaje y el turismo en los dos volúmenes de Milenio, vemos que las derivadas del \"viaje\" son mucho más numerosas que las derivadas del turismo (Milenio 1: viaj- 248/ turis- 77 veces/ Milenio 2: viaj- 232/ turis- 65 veces) Podríamos decir que el autor como sus personajes sienten más apego al viaje, siendo una forma mejor considerada - y volveremos sobre esta idea después. Esto se debe al doble sentido de la palabra \"viaje\", desplazamiento y estancia, así como a la existencia del verbo \"viajar\".",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            341,
+            286,
+            433,
+            965
+          ]
+        },
+        {
+          "text": "En cuanto a la etimología, base de la diferencia entre ambos términos, Madame Lissieux precisa en Milenio que \"tour\" implica regreso:",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            444,
+            286,
+            469,
+            965
+          ]
+        },
+        {
+          "text": "He tardado años en reaccionar y me ha ayudado mucho haber accedido a la condición de viajera, de viajera, insisto, no de turista. Paul Bowles decía que la diferencia entre un viajero y un turista consiste en que éste sabe cuándo comienza y termina su viaje; un viajero de verdad, no: sabe cuándo comienza, pero no cuándo termina. -¡Como nuestro viaje, jefe! ¡Somos viajeros! (Vázquez Montalbán, 37)³",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            472,
+            286,
+            544,
+            965
+          ]
+        },
+        {
+          "text": "El viajero-explorador vs turista-idiota del viaje",
+          "label": "TITLE",
+          "box_2d": [
+            556,
+            286,
+            568,
+            775
+          ]
+        },
+        {
+          "text": "El desprecio hacia el turista es algo que se observa tanto en la obra de Montalbán como en el discurso común. Cabe recordar que la palabra \"turista\" no siempre tuvo un sentido peyorativo: en 1838, Stendhal, por anglofilia y por esnobismo, se enorgullecía de ser un turista, cuando publicó Memorias de un turista. Asimismo, Gérard de Nerval aceptó esta",
+          "label": "MAIN_TEXT",
+          "box_2d": [
+            580,
+            286,
+            652,
+            965
+          ]
+        },
+        {
+          "text": "³ Otra diferencia que existe es la espacial: para muchos, viajar significa ir lejos. Pero no parece satisfactoria esta diferencia en nuestro mundo porque con el progreso técnico, las distancias se acortan y además se puede ir muy lejos para \"hacer turismo\", lo que se ve en el periplo de Carvalho y Biscuter.",
+          "label": "FOOTNOTE",
+          "box_2d": [
+            654,
+            286,
+            701,
+            965
+          ]
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "startProcessing": true
+}

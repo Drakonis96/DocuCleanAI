@@ -1,9 +1,11 @@
 services:
-  docuclean:
+  docuclean-ai:
     build: .
     ports:
       - "5037:5037"
-    environment:
-      - API_KEY=${API_KEY}
     volumes:
-      - ./data:/data
+      - ./data:/app/data
+      - ./.env.local:/app/.env.local
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

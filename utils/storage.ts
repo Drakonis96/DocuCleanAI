@@ -1,83 +1,47 @@
-import { DocumentData, FileSystemItem, FolderData } from '../types';
+import { FileSystemItem } from '../types';
 
-const DB_NAME = 'DocuCleanDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'documents';
-
-// Helper to open DB
-const openDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      }
-    };
-  });
-};
+// Use relative path so Vite proxy handles it in dev, and it works in prod (same origin)
+const API_BASE = '/api/documents';
 
 export const getAllItems = async (): Promise<FileSystemItem[]> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => reject(request.error);
-  });
+  const response = await fetch(API_BASE);
+  if (!response.ok) {
+    throw new Error('Failed to fetch items');
+  }
+  return response.json();
 };
 
-export const saveItem = async (item: FileSystemItem): Promise<void> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.put(item);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+export const saveItem = async (item: FileSystemItem, startProcessing: boolean = false): Promise<FileSystemItem> => {
+  const body = { ...item, startProcessing };
+  const response = await fetch(API_BASE, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
   });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to save item: ${response.status} ${response.statusText} - ${errorText}`);
+  }
+  return response.json();
 };
 
 export const deleteItem = async (id: string): Promise<void> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.delete(id);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+  const response = await fetch(`${API_BASE}/${id}`, {
+    method: 'DELETE',
   });
+  if (!response.ok) {
+    throw new Error('Failed to delete item');
+  }
 };
 
 export const nukeDB = async (keepFolders: boolean = false): Promise<void> => {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-        
-        if (!keepFolders) {
-            const request = store.clear();
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        } else {
-            // Manual delete of only files
-            const request = store.openCursor();
-            request.onsuccess = (event) => {
-                const cursor = (event.target as IDBRequest).result;
-                if (cursor) {
-                    const item = cursor.value as FileSystemItem;
-                    if (item.type === 'file') {
-                        cursor.delete();
-                    }
-                    cursor.continue();
-                } else {
-                    resolve();
-                }
-            };
-            request.onerror = () => reject(request.error);
-        }
-    });
+  const items = await getAllItems();
+  for (const item of items) {
+    if (keepFolders && item.type === 'folder') {
+      continue;
+    }
+    await deleteItem(item.id);
+  }
 };

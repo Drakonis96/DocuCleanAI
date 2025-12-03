@@ -6,11 +6,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, (process as any).cwd(), '');
   return {
     plugins: [react()],
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-    },
     server: {
       port: 5173,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:5037',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
     preview: {
       port: 5037,
