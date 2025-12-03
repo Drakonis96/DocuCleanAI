@@ -150,7 +150,18 @@ async function processPageWithGemini(base64Image, mimeType, modelName) {
   });
 
   const textResponse = typeof response.text === 'function' ? response.text() : response.text;
-  return JSON.parse(textResponse).blocks;
+  
+  if (!textResponse) {
+    console.warn("Gemini returned empty text response. Returning empty blocks.");
+    return [];
+  }
+
+  try {
+    return JSON.parse(textResponse).blocks;
+  } catch (e) {
+    console.error("Failed to parse Gemini response:", textResponse);
+    throw new Error(`Invalid JSON response from Gemini: ${e.message}`);
+  }
 }
 
 const activeProcessing = new Set();

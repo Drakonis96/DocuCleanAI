@@ -51,7 +51,7 @@ const UploadView: React.FC<UploadViewProps> = ({ onFileSelect }) => {
           className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors"
         >
           <option value="gemini-2.5-flash">Gemini 2.5 Flash (Balanced)</option>
-          <option value="gemini-2.5-flash-lite-latest">Gemini 2.5 Flash Lite (Faster)</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Faster)</option>
         </select>
       </div>
 
