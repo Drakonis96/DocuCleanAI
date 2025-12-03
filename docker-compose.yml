@@ -1,0 +1,9 @@
+services:
+  docuclean:
+    build: .
+    ports:
+      - "5037:5037"
+    environment:
+      - API_KEY=${API_KEY}
+    volumes:
+      - ./data:/data

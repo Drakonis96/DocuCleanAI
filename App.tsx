@@ -1,0 +1,492 @@
+import React, { useState, useEffect, useRef } from 'react';
+import UploadView from './components/UploadView';
+import Dashboard from './components/Dashboard';
+import EditorView from './components/Editor/EditorView';
+import { HomeIcon, ArchiveIcon, TrashIcon, AlertCircleIcon, LoaderIcon } from './components/Icons';
+import { AppView, DocumentData, ProcessingOptions, FileSystemItem, FolderData, PageData } from './types';
+import { reconstructCleanText } from './utils/reconstruction';
+import { getAllItems, saveItem, deleteItem, nukeDB } from './utils/storage';
+import { processPageWithGemini } from './services/geminiService';
+import { MOCK_ID_PREFIX } from './constants';
+// @ts-ignore
+import * as pdfjsLib from 'pdfjs-dist';
+// @ts-ignore
+import JSZip from 'jszip';
+
+// Configure PDF.js worker
+const PDF_WORKER_URL = 'https://aistudiocdn.com/pdfjs-dist@5.4.449/build/pdf.worker.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+
+const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
+  const [items, setItems] = useState<FileSystemItem[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  // Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteIncludeFolders, setDeleteIncludeFolders] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  // --- DATA LOADING ---
+
+  const loadItems = async () => {
+    try {
+      const data = await getAllItems();
+      setItems(data);
+    } catch (e) {
+      console.error("Failed to load items from DB", e);
+    }
+  };
+
+  // Initial Load
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  // --- Helpers ---
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const convertPdfToImages = async (file: File): Promise<{data: string, mimeType: string}[]> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    const images: {data: string, mimeType: string}[] = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1.5 }); 
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) continue;
+      await page.render({ canvasContext: ctx, viewport } as any).promise;
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const base64 = dataUrl.split(',')[1];
+      images.push({ data: base64, mimeType: 'image/jpeg' });
+    }
+    return images;
+  };
+
+  // --- PROCESSING LOGIC (FRONTEND) ---
+
+  const processDocument = async (docId: string) => {
+    // 1. Get the current state of the document
+    let currentItems = await getAllItems();
+    let doc = currentItems.find(i => i.id === docId) as DocumentData;
+    
+    if (!doc) return;
+
+    try {
+      // 2. Iterate through pages
+      for (let i = 0; i < doc.pages.length; i++) {
+        const page = doc.pages[i];
+        
+        // Skip if already completed
+        if (page.status === 'completed') continue;
+
+        try {
+          // Extract base64
+          const base64Data = page.imageUrl.split(',')[1];
+          const mimeType = page.imageUrl.split(';')[0].split(':')[1];
+
+          // Call Gemini
+          const blocks = await processPageWithGemini(base64Data, mimeType, doc.modelUsed);
+
+          // Update Page Status
+          doc.pages[i] = {
+            ...page,
+            blocks: blocks,
+            status: 'completed'
+          };
+          doc.processedPages = i + 1;
+
+          // Save and Update UI incrementally
+          await saveItem(doc);
+          setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
+
+        } catch (err) {
+          console.error(`Page ${i + 1} failed`, err);
+          doc.pages[i].status = 'error';
+          doc.processedPages = i + 1; // Still count as processed to advance progress bar
+          await saveItem(doc);
+          setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
+        }
+      }
+
+      // 3. Finalize Status
+      const allFailed = doc.pages.every(p => p.status === 'error');
+      doc.status = allFailed ? 'error' : 'ready';
+      
+      await saveItem(doc);
+      setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
+
+    } catch (e) {
+      console.error("Fatal processing error", e);
+      doc.status = 'error';
+      await saveItem(doc);
+      setItems(prev => prev.map(item => item.id === docId ? { ...doc } : item));
+    }
+  };
+
+  // --- Actions ---
+
+  const handleCreateFolder = async (name: string) => {
+    const newFolder: FolderData = {
+      id: `folder_${Date.now()}`,
+      name: name,
+      type: 'folder',
+      parentId: currentFolderId,
+      createdAt: Date.now()
+    };
+    
+    await saveItem(newFolder);
+    setItems(prev => [...prev, newFolder]);
+  };
+
+  const handleRequestDelete = (itemId: string) => {
+    setItemToDelete(itemId);
+  };
+
+  const executeDeleteItem = async () => {
+    if (!itemToDelete) return;
+    const itemId = itemToDelete;
+
+    // Use local state 'items' instead of fetching again to be faster
+    // Recursive find IDs to delete (folder contents)
+    const getChildrenIds = (parentId: string): string[] => {
+      return items
+        .filter(i => i.parentId === parentId)
+        .flatMap(child => [child.id, ...getChildrenIds(child.id)]);
+    };
+    
+    const idsToDelete = [itemId, ...getChildrenIds(itemId)];
+    
+    try {
+      for (const id of idsToDelete) {
+        await deleteItem(id);
+      }
+      
+      // Update local state
+      setItems(prev => prev.filter(i => !idsToDelete.includes(i.id)));
+      
+      if (activeDocId && idsToDelete.includes(activeDocId)) {
+        setCurrentView(AppView.DASHBOARD);
+        setActiveDocId(null);
+      }
+    } catch (e) {
+      console.error("Failed to delete items", e);
+      alert("An error occurred while deleting. Please try again.");
+      loadItems(); // Re-sync with DB just in case
+    } finally {
+      setItemToDelete(null);
+    }
+  };
+
+  const handleMoveItem = async (itemId: string, targetFolderId: string | null) => {
+    if (itemId === targetFolderId) return;
+    
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      const updatedItem = { ...item, parentId: targetFolderId };
+      await saveItem(updatedItem);
+      setItems(prev => prev.map(i => i.id === itemId ? updatedItem : i));
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    await nukeDB(!deleteIncludeFolders);
+    await loadItems(); // Reload from DB (should be empty or only folders)
+    setIsDeleteModalOpen(false);
+    setDeleteIncludeFolders(false);
+    if (currentView === AppView.EDITOR) {
+      setCurrentView(AppView.DASHBOARD);
+      setActiveDocId(null);
+    }
+  };
+
+  const handleExportAll = async () => {
+    const zip = new JSZip();
+    const docs = items.filter(i => i.type === 'file' && (i as DocumentData).status === 'ready') as DocumentData[];
+    
+    if (docs.length === 0) {
+      alert("No ready documents to export.");
+      return;
+    }
+
+    docs.forEach(doc => {
+      const content = doc.savedText || reconstructCleanText(doc.pages);
+      zip.file(`${doc.name.replace(/\.[^/.]+$/, "")}.txt`, content);
+    });
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "all_notes.zip";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleFileSelect = async (fileList: FileList, options: ProcessingOptions) => {
+    const files = Array.from(fileList);
+    setIsUploading(true);
+    
+    try {
+      const newDocs: DocumentData[] = [];
+
+      for (const file of files) {
+        const docId = `${MOCK_ID_PREFIX}${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
+        const isPDF = file.type === 'application/pdf';
+        let images: {data: string, mimeType: string}[] = [];
+
+        if (isPDF) {
+          images = await convertPdfToImages(file);
+        } else {
+          const base64 = await fileToBase64(file);
+          images = [{ data: base64, mimeType: file.type }];
+        }
+
+        const newDoc: DocumentData = {
+          id: docId,
+          name: file.name,
+          type: 'file',
+          parentId: currentFolderId,
+          createdAt: Date.now(),
+          uploadDate: Date.now(),
+          status: 'processing', // Initially processing
+          modelUsed: options.model,
+          totalPages: images.length,
+          processedPages: 0,
+          pages: images.map((img, idx) => ({
+            pageNumber: idx + 1,
+            imageUrl: `data:${img.mimeType};base64,${img.data}`,
+            blocks: [],
+            status: 'pending'
+          }))
+        };
+        
+        // Save initial state to DB
+        await saveItem(newDoc);
+        newDocs.push(newDoc);
+      }
+      
+      // Update UI with new documents immediately
+      setItems(prev => [...prev, ...newDocs]);
+      setCurrentView(AppView.DASHBOARD);
+
+      // Start processing in background (non-blocking for UI, but blocking for the async function logic)
+      // We purposefully don't await this map so UI stays responsive
+      newDocs.forEach(doc => processDocument(doc.id));
+
+    } catch (error: any) {
+      console.error("Processing init failed", error);
+      alert(`Failed to upload: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleOpenDocument = (docId: string) => {
+    setActiveDocId(docId);
+    setCurrentView(AppView.EDITOR);
+  };
+
+  const handleSaveDocument = async (docId: string, newText: string) => {
+    const item = items.find(i => i.id === docId);
+    if (item) {
+       const updatedItem = { ...item, savedText: newText };
+       await saveItem(updatedItem);
+       setItems(prev => prev.map(i => i.id === docId ? updatedItem : i));
+    }
+  };
+
+  const goToHome = () => {
+    setCurrentView(AppView.DASHBOARD);
+    setCurrentFolderId(null);
+  };
+
+  const activeDoc = items.find(d => d.id === activeDocId) as DocumentData | undefined;
+
+  return (
+    <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-900">
+      {/* Global Navigation */}
+      <nav className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={goToHome}>
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
+            DC
+          </div>
+          <span className="text-xl font-bold text-slate-800 tracking-tight">DocuClean AI</span>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={handleExportAll}
+            className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors flex items-center space-x-2"
+            title="Export All Notes"
+          >
+            <ArchiveIcon className="w-5 h-5" />
+            <span className="font-medium hidden sm:inline">Export All</span>
+          </button>
+          
+          <div className="h-6 w-px bg-slate-300 mx-2"></div>
+
+          {/* Delete All Button */}
+          <button 
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center space-x-2"
+            title="Delete All Data"
+          >
+            <TrashIcon className="w-5 h-5" />
+            <span className="font-medium hidden sm:inline">Delete All</span>
+          </button>
+
+          <div className="h-6 w-px bg-slate-300 mx-2"></div>
+          
+          <button 
+            onClick={goToHome}
+            className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors flex items-center space-x-2"
+            title="Go to Dashboard"
+          >
+            <HomeIcon className="w-5 h-5" />
+            <span className="font-medium hidden sm:inline">Home</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-hidden relative flex flex-col">
+        {currentView === AppView.UPLOAD && (
+          <UploadView onFileSelect={handleFileSelect} />
+        )}
+        
+        {currentView === AppView.DASHBOARD && (
+          <Dashboard 
+            items={items}
+            currentFolderId={currentFolderId}
+            onOpenDocument={handleOpenDocument}
+            onNewUpload={() => setCurrentView(AppView.UPLOAD)}
+            onCreateFolder={handleCreateFolder}
+            onNavigateFolder={setCurrentFolderId}
+            onDeleteItem={handleRequestDelete}
+            onMoveItem={handleMoveItem}
+          />
+        )}
+
+        {currentView === AppView.EDITOR && activeDoc && (
+          <EditorView 
+            doc={activeDoc} 
+            onBack={() => setCurrentView(AppView.DASHBOARD)}
+            onSave={handleSaveDocument}
+          />
+        )}
+      </main>
+
+      {/* Loading Overlay */}
+      {isUploading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+          <LoaderIcon className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+          <h2 className="text-xl font-bold text-slate-800">Processing Document...</h2>
+          <p className="text-slate-500">Preparing and uploading your file</p>
+        </div>
+      )}
+
+      {/* Single Item Delete Confirmation Modal */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center space-x-3 mb-4 text-red-600">
+              <div className="p-2 bg-red-100 rounded-full">
+                <TrashIcon className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">Delete Item</h2>
+            </div>
+            
+            <p className="text-slate-600 mb-6">
+              Are you sure you want to delete <strong>{items.find(i => i.id === itemToDelete)?.name}</strong>?
+              {items.find(i => i.id === itemToDelete)?.type === 'folder' && " This will permanently delete all documents inside it."}
+            </p>
+
+            <div className="flex justify-end space-x-3">
+              <button 
+                onClick={() => setItemToDelete(null)}
+                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={executeDeleteItem}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center space-x-3 mb-4 text-red-600">
+              <div className="p-2 bg-red-100 rounded-full">
+                <AlertCircleIcon className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">Delete All Data</h2>
+            </div>
+            
+            <p className="text-slate-600 mb-6">
+              Are you sure you want to delete all documents? This action cannot be undone.
+            </p>
+
+            <div className="mb-6 flex items-center space-x-3 p-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer" onClick={() => setDeleteIncludeFolders(!deleteIncludeFolders)}>
+              <input 
+                type="checkbox" 
+                id="deleteFolders" 
+                checked={deleteIncludeFolders}
+                onChange={(e) => setDeleteIncludeFolders(e.target.checked)}
+                className="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-300"
+              />
+              <label htmlFor="deleteFolders" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                Also delete all folders (structure)
+              </label>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteAll}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm"
+              >
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
